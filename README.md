@@ -52,15 +52,22 @@ Shows a git diff summary after syncing. Then commit manually when happy.
 ### `backup` — Create a portable backup archive
 
 ```bash
-dotstation backup all          # backup everything (GPG, SSH, dotfiles, configs)
+dotstation backup all          # backup everything below in one archive
 dotstation backup gpg          # backup ~/.gnupg only
 dotstation backup ssh          # backup ~/.ssh only (encrypted by default)
 dotstation backup dotfiles     # backup .gitconfig, fish config, /etc/hosts
 dotstation backup configs      # backup ~/.config/i3 and ~/.config/polybar
+dotstation backup cursor       # backup Cursor skills, rules, transcripts, settings, extensions (encrypted by default)
+dotstation backup editors      # backup JetBrains settings
+dotstation backup manifests    # capture rpm/flatpak/uv/pip/crontab lists as reference text files
 ```
 
 Backups are saved as timestamped `.tar.gz` archives in `~/dotstation-backups/`.  
-Pass `--encrypt` to GPG-encrypt the archive with a passphrase (`AES256`).
+Pass `--encrypt`/`--no-encrypt` to control GPG-encryption (`AES256`) — `ssh` and `cursor` default to encrypted since they can contain keys or personal chat history; everything else defaults to unencrypted.
+
+Cursor skills/rules/transcripts are personal (not shipped in this public repo like i3/polybar), so they live only in these encrypted backup archives — never in `dotstation sync`.
+
+Cursor's settings backup is curated rather than a raw directory copy: just `settings.json`, `keybindings.json`, and `snippets/` (not the multi-GB `workspaceStorage`/cache folders), and extensions are captured as an ID list (`cursor --list-extensions`) rather than the extension binaries themselves.
 
 > **On a fresh machine:** Encrypted backups use symmetric encryption (passphrase only — no GPG key required). `gpg` is pre-installed on Fedora. You just need the passphrase you set when backing up. Your GPG keys are restored *from* the backup itself.
 
@@ -72,7 +79,12 @@ dotstation restore gpg         # restore ~/.gnupg
 dotstation restore ssh         # restore ~/.ssh (fixes key permissions automatically)
 dotstation restore dotfiles    # restore .gitconfig, fish config, /etc/hosts
 dotstation restore configs     # restore i3 and polybar configs
+dotstation restore cursor      # restore Cursor skills/rules/transcripts/settings, reinstall extensions
+dotstation restore editors     # restore JetBrains settings
+dotstation restore manifests   # extract rpm/flatpak/uv/pip/crontab lists to ~/dotstation-manifest for manual review
 ```
+
+**App-install ordering:** config *files* are restored regardless of whether the corresponding app is installed — they're inert until then, so restore never blocks on this. Run `dotstation install` first regardless, since it's what actually installs Cursor/PyCharm/etc. If an app is still missing when you restore its configs, you'll get a note telling you which command to install. The one thing that *does* require the app to be present is extension replay (`cursor --install-extension ...`) — if `cursor` isn't on `$PATH` yet, that step is skipped with instructions to re-run it once installed. Package/extension manifests (`restore manifests`) are always extracted for manual review rather than auto-installed.
 
 ### `status` — Show current state
 
@@ -115,6 +127,8 @@ dotstation install
 
 Installs everything: i3, polybar, Docker, VS Code, Cursor, fonts, dev tools — skipping anything already present.
 
+**Do this before Step 3.** Restoring configs never fails if an app isn't installed yet (files just sit inert until it is), but replaying Cursor extensions and having Cursor actually *do* anything with its restored settings requires Cursor to already exist — hence installing first.
+
 ### Step 3 — Restore your backup *(skip on first setup)*
 
 If you're coming from a previous machine and have a backup archive:
@@ -123,7 +137,7 @@ If you're coming from a previous machine and have a backup archive:
 dotstation restore all     # pick from available backups interactively
 ```
 
-This restores your GPG keys, SSH keys, dotfiles, and configs.
+This restores your GPG keys, SSH keys, dotfiles, configs, and Cursor/JetBrains settings (reinstalling Cursor extensions since Step 2 already installed it). If anything's still missing an app, `restore` tells you exactly which command to install.
 
 ### Step 4 — Deploy configs
 
