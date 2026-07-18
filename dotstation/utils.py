@@ -24,3 +24,21 @@ def ensure_dir(p: Path) -> None:
 
 def is_command_available(cmd: str) -> bool:
     return subprocess.run(["which", cmd], capture_output=True).returncode == 0
+
+
+def capture_output(cmd: list[str], timeout: int = 15) -> str:
+    """Run a command and return its stdout, or "" if it fails/is missing/times out."""
+    if not is_command_available(cmd[0]):
+        return ""
+    try:
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
+    except (OSError, subprocess.TimeoutExpired):
+        return ""
+    if result.returncode != 0:
+        return ""
+    return result.stdout.strip()
+
+
+def list_extensions(editor_cmd: str) -> str:
+    """Return newline-separated extension IDs for a VS Code-family editor (Cursor, Code)."""
+    return capture_output([editor_cmd, "--list-extensions"])

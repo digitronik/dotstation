@@ -5,8 +5,14 @@ from pathlib import Path
 import click
 from rich.console import Console
 
-from dotstation.constants import DEFAULT_BACKUP_DIR
-from dotstation.utils import ensure_dir
+from dotstation.constants import (
+    BackupTarget,
+    CURSOR_TARGETS,
+    EDITOR_TARGETS,
+    ALL_TARGETS,
+    DEFAULT_BACKUP_DIR,
+)
+from dotstation.utils import ensure_dir, is_command_available
 
 console = Console()
 
@@ -56,6 +62,49 @@ def _fix_permissions(paths: list[Path]) -> None:
     console.print("  [dim]Permissions fixed.[/dim]")
 
 
+def _check_app_readiness(items: dict[str, BackupTarget]) -> None:
+    """Warn about any restored target whose app isn't installed yet.
+
+    Restoring the raw config files never requires the app to be present — they just sit inert until
+    it is. This only flags it so you know to run `dotstation install` before the config takes effect.
+    """
+    missing_apps = sorted({
+        t.requires_cmd for t in items.values()
+        if t.requires_cmd and not is_command_available(t.requires_cmd)
+    })
+    if missing_apps:
+        console.print(
+            "\n  [yellow]Note:[/yellow] configs were restored for apps that aren't installed on this "
+            "machine yet. They'll take effect once you install them — run [bold]dotstation install[/bold] first:"
+        )
+        for app in missing_apps:
+            console.print(f"    • {app}")
+
+
+def _replay_extensions(manifest_filename: str, editor_cmd: str) -> None:
+    """Reinstall an editor's extensions from its backed-up manifest, if the editor is installed."""
+    manifest_path = Path.home() / "dotstation-manifest" / manifest_filename
+    if not manifest_path.exists():
+        return
+
+    if not is_command_available(editor_cmd):
+        console.print(
+            f"  [yellow][SKIP][/yellow]  {editor_cmd} not installed — extensions not reinstalled.\n"
+            f"    Install {editor_cmd} first (dotstation install), then run:\n"
+            f"    [dim]cat {manifest_path} | xargs -n1 {editor_cmd} --install-extension[/dim]"
+        )
+        return
+
+    extensions = [e.strip() for e in manifest_path.read_text().splitlines() if e.strip()]
+    if not extensions:
+        return
+
+    console.print(f"  [dim]Reinstalling {len(extensions)} {editor_cmd} extension(s)...[/dim]")
+    for ext in extensions:
+        subprocess.run([editor_cmd, "--install-extension", ext], capture_output=True)
+    console.print(f"  [green][OK][/green]    {editor_cmd} extensions reinstalled.")
+
+
 def _list_backups(backup_dir: Path) -> list[Path]:
     if not backup_dir.exists():
         return []
@@ -64,7 +113,6 @@ def _list_backups(backup_dir: Path) -> list[Path]:
 
 def _decrypt_if_needed(archive: Path) -> Path:
     if archive.suffix == ".gpg":
-        import subprocess
         decrypted = Path(str(archive).removesuffix(".gpg"))
         console.print("  [dim]Decrypting archive (you will be prompted for the passphrase)...[/dim]")
         result = subprocess.run(
@@ -98,7 +146,7 @@ def _restore_archive(archive: Path, targets: list[str] | None = None) -> None:
             try:
                 tar.extract(member, path=Path.home(), filter="data")
                 console.print(f"  [green][OK][/green]    Restored {member.name}")
-            except PermissionError as e:
+            except PermissionError:
                 console.print(f"  [yellow][SKIP][/yellow]  {member.name} — permission denied, skipping")
 
 
@@ -119,7 +167,7 @@ def _pick_backup(backup_dir: Path) -> Path:
 
 @click.group()
 def restore():
-    """Restore GPG keys, SSH keys, dotfiles, and configs from a backup."""
+    """Restore GPG keys, SSH keys, dotfiles, window-manager configs, Cursor, and JetBrains settings from a backup."""
 
 
 @restore.command("gpg")
@@ -168,6 +216,53 @@ def restore_configs(source):
     ])
 
 
+@restore.command("cursor")
+@click.option("--from", "source", default=str(DEFAULT_BACKUP_DIR), help="Backup directory.")
+def restore_cursor(source):
+    """Restore Cursor skills, rules, transcripts, settings, and extensions.
+
+    Skills/rules/settings are restored regardless of whether Cursor is installed — they're inert
+    files until then. Extensions are only reinstalled if the `cursor` CLI is already on $PATH;
+    otherwise install Cursor first (`dotstation install`) and re-run this command.
+    """
+    console.print("\n[bold]Restoring Cursor data...[/bold]")
+    archive = _pick_backup(Path(source))
+    _restore_archive(archive, targets=[
+        ".cursor/skills",
+        ".cursor/rules",
+        ".cursor/projects",
+        ".cursor/argv.json",
+        ".cursor/mcp.json",
+        ".config/Cursor/User",
+        "dotstation-manifest/cursor-extensions.txt",
+    ])
+    _check_app_readiness(CURSOR_TARGETS)
+    _replay_extensions("cursor-extensions.txt", "cursor")
+
+
+@restore.command("editors")
+@click.option("--from", "source", default=str(DEFAULT_BACKUP_DIR), help="Backup directory.")
+def restore_editors(source):
+    """Restore JetBrains settings."""
+    console.print("\n[bold]Restoring editor configs...[/bold]")
+    archive = _pick_backup(Path(source))
+    _restore_archive(archive, targets=[".config/JetBrains"])
+    _check_app_readiness(EDITOR_TARGETS)
+
+
+@restore.command("manifests")
+@click.option("--from", "source", default=str(DEFAULT_BACKUP_DIR), help="Backup directory.")
+def restore_manifests(source):
+    """Extract package/extension manifests for manual review (never auto-reinstalled)."""
+    console.print("\n[bold]Extracting package manifests...[/bold]")
+    archive = _pick_backup(Path(source))
+    _restore_archive(archive, targets=["dotstation-manifest"])
+    console.print(
+        f"\n  [dim]Reference files extracted to {Path.home() / 'dotstation-manifest'} — "
+        f"review and reinstall manually, e.g. [bold]dnf install $(cat rpm-packages.txt)[/bold].[/dim]"
+    )
+
+
 @restore.command("all")
 @click.option("--from", "source", default=str(DEFAULT_BACKUP_DIR), help="Backup directory.")
 def restore_all(source):
@@ -183,3 +278,9 @@ def restore_all(source):
         Path.home() / ".config" / "i3",
         Path.home() / ".config" / "polybar",
     ])
+    _check_app_readiness(ALL_TARGETS)
+    _replay_extensions("cursor-extensions.txt", "cursor")
+    console.print(
+        f"\n  [dim]Package manifests (if any) were extracted to {Path.home() / 'dotstation-manifest'} "
+        f"for manual review.[/dim]"
+    )
