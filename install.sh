@@ -191,6 +191,21 @@ dnf_install "i3lock" "i3lock (Screen Locker)"
 section "Bluetooth"
 dnf_install "blueman" "Blueman"
 
+# bluez defaults AutoEnable=true (powers on at boot) — keep it off until used.
+BLUETOOTH_CONF="/etc/bluetooth/main.conf"
+if grep -q "^AutoEnable=false" "$BLUETOOTH_CONF" 2>/dev/null; then
+    skip "Bluetooth AutoEnable=false"
+else
+    info "Disabling Bluetooth AutoEnable (stay off until you turn it on)..."
+    if sudo sed -i -E 's/^#?AutoEnable=.*/AutoEnable=false/' "$BLUETOOTH_CONF" \
+        && grep -q "^AutoEnable=false" "$BLUETOOTH_CONF" \
+        && sudo systemctl restart bluetooth &>/dev/null; then
+        success "Bluetooth AutoEnable=false"
+    else
+        fail "Bluetooth AutoEnable=false  (edit $BLUETOOTH_CONF manually: set AutoEnable=false under [Policy])"
+    fi
+fi
+
 # --- Networking ---------------------------------------------------------------
 section "Networking"
 dnf_install "NetworkManager-tui" "NetworkManager TUI (nmtui)"
