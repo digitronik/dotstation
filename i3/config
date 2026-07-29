@@ -8,24 +8,35 @@ set $mod         Mod4
 set $terminal    tilix
 set $filemanager thunar
 
+# Keep in sync with the [colors] palette in polybar/config.ini (primary/blue).
+set $accent       #5E81AC
+set $accent_light #60FFF7
+
 # Appearance ------------------------------------------------------------------
 
-font pango:Droid Sans Mono, Font Awesome 6 Free Solid 11
+# "Droid Sans Mono" isn't installed — only "Droid Sans" is (see fonts/droid-sans).
+# Match the family used everywhere else (Polybar, Dunst, dmenu) for a consistent look.
+font pango:Droid Sans, Font Awesome 6 Free Solid 11
 
-gaps inner 1
-gaps outer 1
+gaps inner 6
+gaps outer 3
+smart_gaps on
+smart_borders on
+hide_edge_borders smart
 default_border pixel 1
 
-#                        border   bg       text     indicator child_border
-client.focused           #A44BA0  #A44BA0  #EEEEEE  #6633FF   #A44BA0
-client.focused_inactive  #333333  #333333  #999999  #111111   #333333
-client.unfocused         #333333  #333333  #999999  #111111   #333333
-client.urgent            #D95B5B  #D95B5B  #EEEEEE  #D95B5B   #D95B5B
+#                        border       bg           text     indicator     child_border
+client.focused           $accent      $accent      #EEEEEE  $accent_light $accent
+client.focused_inactive  #333333      #333333      #999999  #111111       #333333
+client.unfocused         #333333      #333333      #999999  #111111       #333333
+client.urgent            #D95B5B      #D95B5B      #EEEEEE  #D95B5B       #D95B5B
 
 # Keybindings -----------------------------------------------------------------
 
 # --- Application Launchers ---
-bindsym $mod+d       exec dmenu_run -fn '-*-liberation mono-medium-r-normal-*-15-*-*-*-*-*-*-uni'
+# dmenu here is Xft-enabled, so -fn takes an Xft name (not the old XLFD format) —
+# use the same Droid Sans family as the rest of the desktop.
+bindsym $mod+d       exec dmenu_run -fn 'Droid Sans-11'
 bindsym $mod+Return  exec $terminal
 bindsym $mod+t       exec $terminal
 bindsym $mod+h       exec $filemanager
@@ -136,8 +147,8 @@ bindsym XF86MonBrightnessDown  exec --no-startup-id brightnessctl set 5%-
 exec_always --no-startup-id feh --randomize --bg-scale ~/.config/i3/pictures/
 exec_always --no-startup-id sh $HOME/.config/polybar/launch.sh
 
+# No systray in the bar — bluetooth/wifi/volume are native Polybar modules instead.
 exec --no-startup-id sh ~/.config/i3/battery_notify.sh
-exec --no-startup-id blueman-applet
 
 # Window Rules ----------------------------------------------------------------
 

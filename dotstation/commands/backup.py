@@ -135,9 +135,9 @@ def backup_dotfiles(output, encrypt):
 @click.option("--output", "-o", default=str(DEFAULT_BACKUP_DIR), help="Output directory.")
 @click.option("--encrypt/--no-encrypt", default=False, help="GPG-encrypt the archive.")
 def backup_configs(output, encrypt):
-    """Backup i3 and Polybar configs."""
-    console.print("\n[bold]Backing up i3 and Polybar configs...[/bold]")
-    targets = {k: v for k, v in BACKUP_TARGETS.items() if k in ("i3", "polybar")}
+    """Backup i3, Polybar, Dunst, and Rofi configs."""
+    console.print("\n[bold]Backing up i3, Polybar, Dunst, and Rofi configs...[/bold]")
+    targets = {k: v for k, v in BACKUP_TARGETS.items() if k in ("i3", "polybar", "dunst", "rofi")}
     _backup_items(targets, Path(output), encrypt)
 
 

@@ -40,8 +40,8 @@ def _fix_permissions(paths: list[Path]) -> None:
                 else:
                     item.chmod(0o600)
 
-        # i3 and polybar — 755 dirs, 644 files, 755 scripts
-        elif path.name in ("i3", "polybar"):
+        # i3, polybar, dunst, rofi — 755 dirs, 644 files, 755 scripts
+        elif path.name in ("i3", "polybar", "dunst", "rofi"):
             for item in path.rglob("*"):
                 if item.is_dir():
                     item.chmod(0o755)
@@ -206,13 +206,15 @@ def restore_dotfiles(source):
 @restore.command("configs")
 @click.option("--from", "source", default=str(DEFAULT_BACKUP_DIR), help="Backup directory.")
 def restore_configs(source):
-    """Restore i3 and Polybar configs."""
-    console.print("\n[bold]Restoring i3 and Polybar configs...[/bold]")
+    """Restore i3, Polybar, Dunst, and Rofi configs."""
+    console.print("\n[bold]Restoring i3, Polybar, Dunst, and Rofi configs...[/bold]")
     archive = _pick_backup(Path(source))
-    _restore_archive(archive, targets=[".config/i3", ".config/polybar"])
+    _restore_archive(archive, targets=[".config/i3", ".config/polybar", ".config/dunst", ".config/rofi"])
     _fix_permissions([
         Path.home() / ".config" / "i3",
         Path.home() / ".config" / "polybar",
+        Path.home() / ".config" / "dunst",
+        Path.home() / ".config" / "rofi",
     ])
 
 
@@ -277,6 +279,8 @@ def restore_all(source):
         Path.home() / ".config" / "fish",
         Path.home() / ".config" / "i3",
         Path.home() / ".config" / "polybar",
+        Path.home() / ".config" / "dunst",
+        Path.home() / ".config" / "rofi",
     ])
     _check_app_readiness(ALL_TARGETS)
     _replay_extensions("cursor-extensions.txt", "cursor")

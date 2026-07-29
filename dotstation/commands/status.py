@@ -19,8 +19,8 @@ console = Console()
 
 REQUIRED_COMMANDS = [
     "i3", "polybar", "tilix", "feh", "arandr", "brightnessctl",
-    "pavucontrol", "i3lock", "blueman-applet", "dunst", "xclip",
-    "rofi", "zenity", "git", "fish", "vim", "docker", "uv",
+    "pavucontrol", "i3lock", "blueman-manager", "dunst", "xclip",
+    "rofi", "zenity", "notify-send", "git", "fish", "vim", "docker", "uv",
     "cursor",
 ]
 
@@ -62,7 +62,10 @@ def status():
 
     # --- Deployed configs -----------------------------------------------------
     console.print("\n[bold]Deployed Configs[/bold]")
-    configs = {"i3": CONFIG_DIR / "i3", "polybar": CONFIG_DIR / "polybar"}
+    configs = {
+        "i3": CONFIG_DIR / "i3", "polybar": CONFIG_DIR / "polybar",
+        "dunst": CONFIG_DIR / "dunst", "rofi": CONFIG_DIR / "rofi",
+    }
     for name, path in configs.items():
         status_str = "[green]✓[/green]" if path_exists(path) else "[red]✗[/red]"
         console.print(f"  {status_str}  [bold]{name}[/bold]  ({path})")

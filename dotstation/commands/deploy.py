@@ -5,7 +5,14 @@ from pathlib import Path
 import click
 from rich.console import Console
 
-from dotstation.constants import get_repo_i3_dir, get_repo_polybar_dir, get_repo_fonts_dir, CONFIG_DIR
+from dotstation.constants import (
+    get_repo_i3_dir,
+    get_repo_polybar_dir,
+    get_repo_dunst_dir,
+    get_repo_rofi_dir,
+    get_repo_fonts_dir,
+    CONFIG_DIR,
+)
 
 console = Console()
 
@@ -30,7 +37,7 @@ def _copy_and_chmod(src: Path, dst: Path) -> None:
 
 @click.group("deploy")
 def deploy():
-    """Deploy i3 and Polybar configs to ~/.config."""
+    """Deploy i3, Polybar, Dunst, and Rofi configs to ~/.config."""
 
 
 @deploy.command("i3")
@@ -61,6 +68,31 @@ def deploy_polybar(backup):
     console.print(f"  [green][OK][/green]    Polybar config deployed to {dst}")
 
 
+@deploy.command("dunst")
+@click.option("--backup/--no-backup", default=True, help="Backup existing config before deploying.")
+def deploy_dunst(backup):
+    """Deploy Dunst config to ~/.config/dunst."""
+    console.print("\n[bold]Deploying Dunst config...[/bold]")
+    dst = CONFIG_DIR / "dunst"
+    if backup:
+        _backup_existing(dst)
+    _copy_and_chmod(get_repo_dunst_dir(), dst)
+    console.print(f"  [green][OK][/green]    Dunst config deployed to {dst}")
+    subprocess.run(["systemctl", "--user", "restart", "dunst"], capture_output=True)
+
+
+@deploy.command("rofi")
+@click.option("--backup/--no-backup", default=True, help="Backup existing config before deploying.")
+def deploy_rofi(backup):
+    """Deploy Rofi theme to ~/.config/rofi."""
+    console.print("\n[bold]Deploying Rofi config...[/bold]")
+    dst = CONFIG_DIR / "rofi"
+    if backup:
+        _backup_existing(dst)
+    _copy_and_chmod(get_repo_rofi_dir(), dst)
+    console.print(f"  [green][OK][/green]    Rofi config deployed to {dst}")
+
+
 @deploy.command("fonts")
 def deploy_fonts():
     """Install bundled fonts to ~/.local/share/fonts."""
@@ -85,6 +117,8 @@ def deploy_all(ctx, backup):
     """Deploy all configs and fonts."""
     ctx.invoke(deploy_i3, backup=backup)
     ctx.invoke(deploy_polybar, backup=backup)
+    ctx.invoke(deploy_dunst, backup=backup)
+    ctx.invoke(deploy_rofi, backup=backup)
     ctx.invoke(deploy_fonts)
     console.print("\n  [bold green]All configs deployed.[/bold green]")
     console.print("  Reload i3 with [bold]Mod+Shift+c[/bold]")
