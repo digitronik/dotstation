@@ -175,7 +175,7 @@ The modifier key is **Super** (Windows key), referred to as `$mod`.
 
 | Keybinding | Action |
 | :--- | :--- |
-| `$mod+Shift+c` | Reload i3 config |
+| `$mod+Shift+c` | Reload i3 config and restart Polybar |
 | `$mod+Shift+e` | Log out (with confirmation) |
 | `$mod+l` | Lock screen |
 | `$mod+Shift+h` | Hibernate |
@@ -206,7 +206,11 @@ The modifier key is **Super** (Windows key), referred to as `$mod`.
 | `i3/battery_notify.sh` | Background daemon — notifies on low (≤20%) and full (≥98%) battery |
 | `i3/screencast.sh` | GIF screen recorder via `byzanz` — toggle with `$mod+PrintScreen` |
 | `polybar/launch.sh` | Kills existing bar instances and starts Polybar fresh |
-| `polybar/bluetooth.sh` | Bluetooth status module — left-click toggles power |
-| `polybar/check-vpn.sh` | VPN status module (checks `tun0` interface) |
+| `polybar/battery.sh` | Battery status module (UPower-backed — handles charge-threshold "battery care" states correctly) — left-click shows a health/cycles notification |
+| `polybar/bluetooth.sh` | Bluetooth status module (icon-only, no on/off text) — left-click toggles power, right-click opens Blueman to pair a device |
+| `polybar/ethernet.sh` | Wired Ethernet status module (nmcli/sysfs-backed — shows a status immediately instead of hiding when USB dongles misreport link state or DHCP hasn't assigned an IP yet) |
+| `polybar/check-vpn.sh` | VPN status module — shows the active NetworkManager VPN profile name (works with OpenConnect, OpenVPN, WireGuard, etc.), or "VPN Off" |
+| `polybar/vpn-menu.sh` | Rofi picker for the VPN module — left-click to connect/disconnect any configured VPN profile |
+| `polybar/wifi-menu.sh` | Rofi picker for the Wi-Fi module — left-click to scan and connect to nearby networks |
 | `polybar/powermenu.sh` | Zenity-based power menu |
 | `polybar/settings.sh` | Zenity-based settings menu |

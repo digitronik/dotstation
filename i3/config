@@ -31,7 +31,11 @@ bindsym $mod+t       exec $terminal
 bindsym $mod+h       exec $filemanager
 
 # --- System & Session ---
-bindsym $mod+Shift+c  reload
+# Plain `reload` only reloads i3's own config — it does NOT re-run `exec_always` lines
+# (that only happens on `restart` or initial login), so Polybar never picks up config
+# changes from a plain reload. Chain an explicit relaunch of Polybar so Mod+Shift+c
+# refreshes both i3 and the bar.
+bindsym $mod+Shift+c  reload; exec --no-startup-id sh $HOME/.config/polybar/launch.sh
 bindsym $mod+Shift+e  exec "i3-nagbar -t warning -m 'Nikhil, Do you want to exit i3?' -b 'Yes, exit i3' 'i3-msg exit'"
 bindsym $mod+l        exec sh ~/.config/i3/lock.sh lock
 bindsym $mod+Shift+h  exec sh ~/.config/i3/lock.sh hibernate
