@@ -1,0 +1,87 @@
+/* config.rasi — Rofi theme matching the i3/Polybar/Dunst palette (see polybar/config.ini [colors]).
+ * Explicit compound selectors (e.g. "element selected.normal") are used because Rofi's built-in
+ * default theme defines those same, more specific selectors — a plain "element selected {}" here
+ * would lose to them. */
+
+configuration {
+    font: "Droid Sans 11";
+    show-icons: false;
+}
+
+* {
+    background-color: #111111FF;
+    background-alt:    #1A1A1AFF;
+    text-color:        #EEEEEEFF;
+    accent:            #5E81ACFF;
+    urgent:            #D95B5BFF;
+    border-color:      #5E81ACFF;
+}
+
+window {
+    background-color: @background-color;
+    border:            1px;
+    border-color:      @border-color;
+    border-radius:     8px;
+    padding:           8px;
+    width:             25%;
+}
+
+mainbox {
+    background-color: @background-color;
+    children:          [ inputbar, listview ];
+    spacing:            8px;
+}
+
+inputbar {
+    background-color: @background-alt;
+    text-color:        @text-color;
+    border-radius:      6px;
+    padding:            8px 10px;
+    children:           [ prompt, entry ];
+}
+
+prompt {
+    text-color: @accent;
+}
+
+entry {
+    text-color:  @text-color;
+    placeholder: "Search...";
+}
+
+listview {
+    background-color: @background-color;
+    lines:              8;
+    spacing:            2px;
+    fixed-height:       false;
+    scrollbar:          false;
+}
+
+element {
+    padding:        6px 10px;
+    border-radius:  6px;
+}
+
+element normal.normal,
+element alternate.normal {
+    background-color: @background-color;
+    text-color:        @text-color;
+}
+
+element selected.normal,
+element selected.active,
+element selected {
+    background-color: @accent;
+    text-color:        @background-color;
+}
+
+element normal.urgent,
+element alternate.urgent {
+    background-color: @background-color;
+    text-color:        @urgent;
+}
+
+element selected.urgent {
+    background-color: @urgent;
+    text-color:        @background-color;
+}

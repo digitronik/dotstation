@@ -46,6 +46,8 @@ BACKUP_TARGETS: dict[str, BackupTarget] = {
     "fish":      BackupTarget(CONFIG_DIR / "fish"),
     "i3":        BackupTarget(CONFIG_DIR / "i3"),
     "polybar":   BackupTarget(CONFIG_DIR / "polybar"),
+    "dunst":     BackupTarget(CONFIG_DIR / "dunst"),
+    "rofi":      BackupTarget(CONFIG_DIR / "rofi", requires_cmd="rofi"),
     "hosts":     BackupTarget(Path("/etc/hosts")),
 }
 
@@ -152,6 +154,14 @@ def get_repo_i3_dir() -> Path:
 
 def get_repo_polybar_dir() -> Path:
     return get_repo_root() / "polybar"
+
+
+def get_repo_dunst_dir() -> Path:
+    return get_repo_root() / "dunst"
+
+
+def get_repo_rofi_dir() -> Path:
+    return get_repo_root() / "rofi"
 
 
 def get_repo_fonts_dir() -> Path:

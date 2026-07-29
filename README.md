@@ -31,9 +31,11 @@ Handles dnf, COPR, custom repos (Docker, Chrome, Cursor, VS Code), pip, and font
 ### `deploy` — Deploy configs to `~/.config`
 
 ```bash
-dotstation deploy all          # deploy i3 + polybar configs + fonts
+dotstation deploy all          # deploy i3 + polybar + dunst + rofi configs + fonts
 dotstation deploy i3           # deploy ~/.config/i3 only
 dotstation deploy polybar      # deploy ~/.config/polybar only
+dotstation deploy dunst        # deploy ~/.config/dunst only (restarts the dunst service)
+dotstation deploy rofi         # deploy ~/.config/rofi only
 dotstation deploy fonts        # install bundled fonts to ~/.local/share/fonts
 ```
 
@@ -42,9 +44,11 @@ Existing configs are automatically backed up as `.bak` before deploying.
 ### `sync` — Sync live changes back into the repo
 
 ```bash
-dotstation sync all            # sync ~/.config/i3 + ~/.config/polybar → repo
+dotstation sync all            # sync ~/.config/{i3,polybar,dunst,rofi} → repo
 dotstation sync i3             # sync i3 only
 dotstation sync polybar        # sync polybar only
+dotstation sync dunst          # sync dunst only
+dotstation sync rofi           # sync rofi only
 ```
 
 Shows a git diff summary after syncing. Then commit manually when happy.
@@ -56,7 +60,7 @@ dotstation backup all          # backup everything below in one archive
 dotstation backup gpg          # backup ~/.gnupg only
 dotstation backup ssh          # backup ~/.ssh only (encrypted by default)
 dotstation backup dotfiles     # backup .gitconfig, fish config, /etc/hosts
-dotstation backup configs      # backup ~/.config/i3 and ~/.config/polybar
+dotstation backup configs      # backup ~/.config/i3, ~/.config/polybar, ~/.config/dunst, ~/.config/rofi
 dotstation backup cursor       # backup Cursor skills, rules, transcripts, settings, extensions (encrypted by default)
 dotstation backup editors      # backup JetBrains settings
 dotstation backup manifests    # capture rpm/flatpak/uv/pip/crontab lists as reference text files
@@ -78,7 +82,7 @@ dotstation restore all         # restore everything (presents a list to pick fro
 dotstation restore gpg         # restore ~/.gnupg
 dotstation restore ssh         # restore ~/.ssh (fixes key permissions automatically)
 dotstation restore dotfiles    # restore .gitconfig, fish config, /etc/hosts
-dotstation restore configs     # restore i3 and polybar configs
+dotstation restore configs     # restore i3, polybar, dunst, and rofi configs
 dotstation restore cursor      # restore Cursor skills/rules/transcripts/settings, reinstall extensions
 dotstation restore editors     # restore JetBrains settings
 dotstation restore manifests   # extract rpm/flatpak/uv/pip/crontab lists to ~/dotstation-manifest for manual review
@@ -142,7 +146,7 @@ This restores your GPG keys, SSH keys, dotfiles, configs, and Cursor/JetBrains s
 ### Step 4 — Deploy configs
 
 ```bash
-dotstation deploy all      # deploys i3, polybar, and fonts to ~/.config
+dotstation deploy all      # deploys i3, polybar, dunst, rofi, and fonts to ~/.config
 ```
 
 Reload i3 with `Mod+Shift+c`. Done.
@@ -209,8 +213,11 @@ The modifier key is **Super** (Windows key), referred to as `$mod`.
 | `polybar/battery.sh` | Battery status module (UPower-backed — handles charge-threshold "battery care" states correctly) — left-click shows a health/cycles notification |
 | `polybar/bluetooth.sh` | Bluetooth status module (icon-only, no on/off text) — left-click toggles power, right-click opens Blueman to pair a device |
 | `polybar/ethernet.sh` | Wired Ethernet status module (nmcli/sysfs-backed — shows a status immediately instead of hiding when USB dongles misreport link state or DHCP hasn't assigned an IP yet) |
+| `polybar/calendar.sh` | Month-calendar notification popup for the date module — right-click (left-click toggles the built-in short/long date format) |
 | `polybar/check-vpn.sh` | VPN status module — shows the active NetworkManager VPN profile name (works with OpenConnect, OpenVPN, WireGuard, etc.), or "VPN Off" |
 | `polybar/vpn-menu.sh` | Rofi picker for the VPN module — left-click to connect/disconnect any configured VPN profile |
 | `polybar/wifi-menu.sh` | Rofi picker for the Wi-Fi module — left-click to scan and connect to nearby networks |
 | `polybar/powermenu.sh` | Zenity-based power menu |
 | `polybar/settings.sh` | Zenity-based settings menu |
+| `dunst/dunstrc` | Notification theme matching the bar's palette (dark background, blue/red accent frames) |
+| `rofi/config.rasi` | Rofi theme matching the bar's palette — used by the Wi-Fi and VPN pickers |

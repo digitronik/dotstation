@@ -316,8 +316,6 @@ dnf_install "lightdm-gtk"           "LightDM GTK Greeter"
 dnf_install "dex-autostart"         "dex-autostart (XDG Autostart)"
 dnf_install "dunst"                 "Dunst (Notification Daemon)"
 dnf_install "xclip"                 "xclip (Clipboard)"
-dnf_install "volumeicon"            "Volume Icon (Tray)"
-dnf_install "network-manager-applet" "NetworkManager Applet (nm-applet)"
 
 # --- System Utilities ---------------------------------------------------------
 section "System Utilities"

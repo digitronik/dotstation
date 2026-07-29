@@ -1,0 +1,13 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+
+# Editor / OS
+.DS_Store
+*.swp
+
+# Local backups created by `dotstation deploy` (*.bak dirs left in ~/.config, not the repo,
+# but ignored here too in case one is ever created inside the repo by mistake)
+*.bak
