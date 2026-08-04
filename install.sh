@@ -27,7 +27,7 @@ declare -a ERRORS=()
 # --- Logging ------------------------------------------------------------------
 info()    { echo -e "  ${BLUE}-->${NC}    $1"; }
 success() { echo -e "  ${GREEN}[OK]${NC}    $1"; ((++INSTALLED)); }
-skip()    { echo -e "  ${YELLOW}[SKIP]${NC}  $1 — already installed"; ((++SKIPPED)); }
+skip()    { echo -e "  ${YELLOW}[SKIP]${NC}  $1 — ${2:-already installed}"; ((++SKIPPED)); }
 fail()    { echo -e "  ${RED}[FAIL]${NC}  $1"; ((++FAILED)); ERRORS+=("$1"); }
 section() { echo -e "\n${BOLD}$1${NC}\n  $(printf '%.0s─' {1..50})"; }
 
@@ -185,7 +185,13 @@ dnf_install "pavucontrol" "PulseAudio Volume Control"
 
 # --- Session & Power ----------------------------------------------------------
 section "Session & Power"
-dnf_install "i3lock" "i3lock (Screen Locker)"
+# i3lock-color (a common COPR fork) ships the same /usr/bin/i3lock + PAM file as the
+# official i3lock package — installing both always fails with a file conflict.
+if is_rpm "i3lock-color"; then
+    skip "i3lock (Screen Locker)" "i3lock-color already provides it"
+else
+    dnf_install "i3lock" "i3lock (Screen Locker)"
+fi
 
 # --- Bluetooth ----------------------------------------------------------------
 section "Bluetooth"
@@ -203,6 +209,62 @@ else
         success "Bluetooth AutoEnable=false"
     else
         fail "Bluetooth AutoEnable=false  (edit $BLUETOOTH_CONF manually: set AutoEnable=false under [Policy])"
+    fi
+fi
+
+# --- Battery Charge Threshold --------------------------------------------------
+# ThinkPad-specific hardware feature (thinkpad_acpi or similar vendor ACPI extension).
+# Detect actual support before touching anything — desktops (no battery) and laptops
+# without this sysfs attribute are skipped cleanly instead of installing dead files.
+section "Battery Charge Threshold"
+
+BATTERY_SCRIPT_SRC="$SCRIPT_DIR/battery/battery-threshold.sh"
+BATTERY_SCRIPT_DST="/usr/local/bin/battery-threshold.sh"
+UDEV_RULE_SRC="$SCRIPT_DIR/battery/99-battery-threshold.rules"
+UDEV_RULE_DST="/etc/udev/rules.d/99-battery-threshold.rules"
+SUDOERS_FILE="/etc/sudoers.d/battery-threshold"
+
+BATTERY_DEVICE=""
+for bat in /sys/class/power_supply/BAT*; do
+    if [ -e "$bat/charge_control_start_threshold" ]; then
+        BATTERY_DEVICE="$(basename "$bat")"
+        break
+    fi
+done
+
+if [ -z "$BATTERY_DEVICE" ]; then
+    skip "Battery charge-threshold" "no charge_control support detected (ThinkPad-only feature; desktops/other laptops are unaffected)"
+elif [ -f "$BATTERY_SCRIPT_SRC" ]; then
+    info "Detected charge-threshold support on $BATTERY_DEVICE"
+    if sudo cp "$BATTERY_SCRIPT_SRC" "$BATTERY_SCRIPT_DST" \
+        && sudo chmod 755 "$BATTERY_SCRIPT_DST"; then
+        success "battery-threshold.sh installed to $BATTERY_SCRIPT_DST"
+    else
+        fail "battery-threshold.sh install"
+    fi
+
+    if [ -f "$UDEV_RULE_SRC" ]; then
+        if sudo cp "$UDEV_RULE_SRC" "$UDEV_RULE_DST" \
+            && sudo udevadm control --reload-rules \
+            && sudo udevadm trigger --action=add --subsystem-match=power_supply; then
+            success "udev rule installed (daily cap re-applies on every boot)"
+        else
+            fail "udev rule install"
+        fi
+    fi
+
+    if sudo test -f "$SUDOERS_FILE"; then
+        skip "sudoers rule for battery-threshold.sh"
+    else
+        info "Adding passwordless sudo rule for battery-threshold.sh ($(whoami) only)..."
+        if echo "$(whoami) ALL=(root) NOPASSWD: $BATTERY_SCRIPT_DST" | sudo tee "$SUDOERS_FILE" > /dev/null \
+            && sudo chmod 440 "$SUDOERS_FILE" \
+            && sudo visudo -c -f "$SUDOERS_FILE" &>/dev/null; then
+            success "sudoers rule for battery-threshold.sh"
+        else
+            sudo rm -f "$SUDOERS_FILE"
+            fail "sudoers rule for battery-threshold.sh  (add manually: visudo -f $SUDOERS_FILE)"
+        fi
     fi
 fi
 

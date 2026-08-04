@@ -26,7 +26,8 @@ dotstation install             # run install.sh (skips already-installed package
 dotstation install --dry-run   # show what would be installed, no changes
 ```
 
-Handles dnf, COPR, custom repos (Docker, Chrome, Cursor, VS Code), pip, and fonts.
+Handles dnf, COPR, custom repos (Docker, Chrome, Cursor, VS Code), pip, fonts, and the
+battery charge-threshold setup (script + udev rule + scoped sudoers entry).
 
 ### `deploy` — Deploy configs to `~/.config`
 
@@ -173,6 +174,44 @@ dotstation backup all          # creates ~/dotstation-backups/dotstation-backup-
 
 ---
 
+## Battery Charge Management
+
+ThinkPads can cap charging at a threshold instead of always charging to 100% — since the
+workstation is USB-C-connected most of the day, this keeps the battery resting around
+75-80% (much healthier long-term than sitting at 100% under constant trickle-charge)
+instead of degrading it for no benefit.
+
+**Modes**, switched from the Polybar battery module (left-click):
+
+| Mode | Threshold | When |
+| :--- | :--- | :--- |
+| **Daily** *(default)* | 75-80% | Docked/plugged in most of the day — the everyday setting |
+| **Full** | 0-100% | Before a trip — need maximum runtime, no cap |
+
+Switching is instant — no reboot needed. The kernel enforces the threshold live: in
+**Daily** mode, once the battery hits 80% it stops charging and coasts on AC power
+(showing as "limited" on the bar) until it drops back to 75%, and in **Full** mode it
+charges straight to 100% like a normal laptop. This works with *any* charger (USB-C dock,
+wall adapter, etc.) — the threshold lives in the battery controller, not tied to a
+specific power source.
+
+A udev rule re-applies **Daily** once per boot, so if you switch to **Full** for a trip
+and forget to switch back, the next reboot self-heals to the protective default —
+**Full** otherwise persists for the rest of the session.
+
+Set up once via `bash install.sh` (see the "Battery Charge Threshold" section) — it
+installs `battery-threshold.sh` to `/usr/local/bin`, the udev rule, and a narrowly-scoped
+passwordless-sudo rule (only for that one script) so the Rofi menu can flip modes without
+a password prompt. Check it's all in place with `dotstation status`.
+
+This is a ThinkPad-specific hardware feature (`thinkpad_acpi` charge_control thresholds),
+so `install.sh` detects support first (`/sys/class/power_supply/BAT*/charge_control_start_threshold`)
+and skips the whole section cleanly on desktops or laptops without it — nothing gets
+installed unless the hardware actually supports it. `battery-threshold.sh` and the udev
+rule detect the battery device dynamically (`BAT0`, `BAT1`, ...) rather than assuming one.
+
+---
+
 ## Keybindings
 
 The modifier key is **Super** (Windows key), referred to as `$mod`.
@@ -210,7 +249,10 @@ The modifier key is **Super** (Windows key), referred to as `$mod`.
 | `i3/battery_notify.sh` | Background daemon — notifies on low (≤20%) and full (≥98%) battery |
 | `i3/screencast.sh` | GIF screen recorder via `byzanz` — toggle with `$mod+PrintScreen` |
 | `polybar/launch.sh` | Kills existing bar instances and starts Polybar fresh |
-| `polybar/battery.sh` | Battery status module (UPower-backed — handles charge-threshold "battery care" states correctly) — left-click shows a health/cycles notification |
+| `polybar/battery.sh` | Battery status module (UPower-backed — handles charge-threshold "battery care" states correctly) — right-click shows a health/cycles notification |
+| `polybar/battery-menu.sh` | Rofi picker for the battery module — left-click to switch charge-threshold mode (Daily 75-80% / Full 100%) or open battery info |
+| `battery/battery-threshold.sh` | Sets the ThinkPad charge-threshold via `sysfs` (`daily`/`full`/`status`) — installed to `/usr/local/bin` by `install.sh` |
+| `battery/99-battery-threshold.rules` | udev rule that re-applies the daily cap once per boot — installed to `/etc/udev/rules.d` by `install.sh` |
 | `polybar/bluetooth.sh` | Bluetooth status module (icon-only, no on/off text) — left-click toggles power, right-click opens Blueman to pair a device |
 | `polybar/ethernet.sh` | Wired Ethernet status module (nmcli/sysfs-backed — shows a status immediately instead of hiding when USB dongles misreport link state or DHCP hasn't assigned an IP yet) |
 | `polybar/calendar.sh` | Month-calendar notification popup for the date module — right-click (left-click toggles the built-in short/long date format) |

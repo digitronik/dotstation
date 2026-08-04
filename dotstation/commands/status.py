@@ -78,4 +78,38 @@ def status():
         status_str = "[green]✓[/green]" if avail else "[red]✗ not found[/red]"
         table.add_row(status_str, f"[bold]{cmd}[/bold]")
     console.print(table)
+
+    # --- Battery charge threshold -----------------------------------------------
+    console.print("\n[bold]Battery Charge Threshold[/bold]")
+    thresh_script = Path("/usr/local/bin/battery-threshold.sh")
+    udev_rule = Path("/etc/udev/rules.d/99-battery-threshold.rules")
+    sudoers_file = Path("/etc/sudoers.d/battery-threshold")
+    script_ok, udev_ok = thresh_script.exists(), udev_rule.exists()
+    # /etc/sudoers.d is 750 root:root — a regular user can't stat inside it, so
+    # Path.exists() always reports False here. Test the actual behavior instead:
+    # a working NOPASSWD rule lets `sudo -n` succeed without prompting.
+    sudoers_ok = False
+    if script_ok:
+        try:
+            result = subprocess.run(
+                ["sudo", "-n", str(thresh_script), "status"],
+                capture_output=True, text=True, timeout=3,
+            )
+            sudoers_ok = result.returncode == 0
+        except Exception:
+            sudoers_ok = False
+    table = Table(show_header=False, box=None, padding=(0, 2))
+    table.add_row("[green]✓[/green]" if script_ok else "[red]✗[/red]", "[bold]battery-threshold.sh[/bold]", str(thresh_script))
+    table.add_row("[green]✓[/green]" if udev_ok else "[red]✗[/red]", "[bold]udev rule[/bold]", str(udev_rule))
+    table.add_row("[green]✓[/green]" if sudoers_ok else "[red]✗[/red]", "[bold]sudoers rule (passwordless sudo)[/bold]", str(sudoers_file))
+    console.print(table)
+    if script_ok:
+        try:
+            result = subprocess.run([str(thresh_script), "status"], capture_output=True, text=True, timeout=2)
+            if result.returncode == 0 and result.stdout.strip():
+                console.print(f"  [dim]{result.stdout.strip()}[/dim]")
+        except Exception:
+            pass
+    if not (script_ok and udev_ok and sudoers_ok):
+        console.print("  [yellow]Run[/yellow] [bold]bash install.sh[/bold] [yellow]to finish setup.[/yellow]")
     console.print()
