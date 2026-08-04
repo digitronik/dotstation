@@ -1,0 +1,10 @@
+# Re-apply the daily charge-threshold once at boot (ACTION=="add" only fires during
+# the initial coldplug scan / on physical battery insertion, never on routine AC or
+# capacity change events) — so a manual "full" switch survives the rest of the
+# session, and only resets to the safe daily cap on the next reboot.
+#
+# TEST== gates this to hardware that actually exposes charge_control thresholds
+# (thinkpad_acpi or a similar vendor ACPI extension) — a no-op everywhere else, so
+# this rule is safe to ship even on machines without the feature. KERNEL=="BAT?"
+# matches BAT0/BAT1/etc. rather than assuming a fixed battery device name.
+ACTION=="add", SUBSYSTEM=="power_supply", KERNEL=="BAT?", TEST=="charge_control_start_threshold", RUN+="/usr/local/bin/battery-threshold.sh daily"
