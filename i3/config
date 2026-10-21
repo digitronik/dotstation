@@ -59,6 +59,11 @@ bindsym $mod+Shift+v  exec pavucontrol
 bindsym Print         exec xfce4-screenshooter
 bindsym $mod+Print    exec sh ~/.config/i3/screencast.sh toggle
 
+# --- TextForge (AI text rewriter) ---
+# Highlight text in any app → hotkey → text is rewritten in-place via local Ollama.
+bindsym $mod+g        exec --no-startup-id sh ~/.config/textforge/textforge.sh fix
+bindsym $mod+Shift+g  exec --no-startup-id sh ~/.config/textforge/textforge-menu.sh
+
 # --- Window Management ---
 bindsym $mod+Shift+q  kill
 
