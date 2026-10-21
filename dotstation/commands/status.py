@@ -20,8 +20,8 @@ console = Console()
 REQUIRED_COMMANDS = [
     "i3", "polybar", "tilix", "feh", "arandr", "brightnessctl",
     "pavucontrol", "i3lock", "blueman-manager", "dunst", "xclip",
-    "rofi", "zenity", "notify-send", "git", "fish", "vim", "docker", "uv",
-    "cursor",
+    "xdotool", "rofi", "notify-send", "jq", "git", "fish", "vim",
+    "docker", "uv", "cursor", "ollama",
 ]
 
 
@@ -65,6 +65,7 @@ def status():
     configs = {
         "i3": CONFIG_DIR / "i3", "polybar": CONFIG_DIR / "polybar",
         "dunst": CONFIG_DIR / "dunst", "rofi": CONFIG_DIR / "rofi",
+        "textforge": CONFIG_DIR / "textforge",
     }
     for name, path in configs.items():
         status_str = "[green]✓[/green]" if path_exists(path) else "[red]✗[/red]"
