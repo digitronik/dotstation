@@ -33,7 +33,7 @@ for line in "${networks[@]}"; do
     lock=""
     [[ -n "$security" && "$security" != "--" ]] && lock=" "
 
-    menu+="${marker} ${ssid}${lock} (${signal}%)"$'\n'
+    menu+="${marker}${ssid}${lock} (${signal}%)"$'\n'
 done
 
 menu+="⟳ Rescan"$'\n'
@@ -54,7 +54,10 @@ case "$choice" in
         ;;
 esac
 
-ssid=$(sed -E 's/^. //; s/ (🔒)? \([0-9]+%\)$//' <<< "$choice")
+# Strip 2-char marker prefix (icon+space or space+space), trailing signal
+# strength, and optional Font Awesome lock icon (\uf023).
+FA_LOCK=$'\uf023'
+ssid=$(sed -E "s/^..//; s/ \([0-9]+%\)$//; s/ ${FA_LOCK}$//" <<< "$choice")
 
 if nmcli -t -f NAME connection show | grep -qxF "$ssid"; then
     nmcli connection up "$ssid" >/dev/null 2>&1 \

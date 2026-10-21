@@ -63,7 +63,7 @@ dotstation backup all          # backup everything below in one archive
 dotstation backup gpg          # backup ~/.gnupg only
 dotstation backup ssh          # backup ~/.ssh only (encrypted by default)
 dotstation backup dotfiles     # backup .gitconfig, fish config, /etc/hosts
-dotstation backup configs      # backup ~/.config/i3, ~/.config/polybar, ~/.config/dunst, ~/.config/rofi
+dotstation backup configs      # backup ~/.config/{i3,polybar,dunst,rofi,textforge}
 dotstation backup cursor       # backup Cursor skills, rules, transcripts, settings, extensions (encrypted by default)
 dotstation backup editors      # backup JetBrains settings
 dotstation backup manifests    # capture rpm/flatpak/uv/pip/crontab lists as reference text files
@@ -85,7 +85,7 @@ dotstation restore all         # restore everything (presents a list to pick fro
 dotstation restore gpg         # restore ~/.gnupg
 dotstation restore ssh         # restore ~/.ssh (fixes key permissions automatically)
 dotstation restore dotfiles    # restore .gitconfig, fish config, /etc/hosts
-dotstation restore configs     # restore i3, polybar, dunst, and rofi configs
+dotstation restore configs     # restore i3, polybar, dunst, rofi, and textforge configs
 dotstation restore cursor      # restore Cursor skills/rules/transcripts/settings, reinstall extensions
 dotstation restore editors     # restore JetBrains settings
 dotstation restore manifests   # extract rpm/flatpak/uv/pip/crontab lists to ~/dotstation-manifest for manual review
@@ -149,7 +149,7 @@ This restores your GPG keys, SSH keys, dotfiles, configs, and Cursor/JetBrains s
 ### Step 4 — Deploy configs
 
 ```bash
-dotstation deploy all      # deploys i3, polybar, dunst, rofi, and fonts to ~/.config
+dotstation deploy all      # deploys i3, polybar, dunst, rofi, textforge, and fonts to ~/.config
 ```
 
 Reload i3 with `Mod+Shift+c`. Done.
@@ -324,8 +324,10 @@ The modifier key is **Super** (Windows key), referred to as `$mod`.
 | `polybar/check-vpn.sh` | VPN status module — shows the active NetworkManager VPN profile name (works with OpenConnect, OpenVPN, WireGuard, etc.), or "VPN Off" |
 | `polybar/vpn-menu.sh` | Rofi picker for the VPN module — left-click to connect/disconnect any configured VPN profile |
 | `polybar/wifi-menu.sh` | Rofi picker for the Wi-Fi module — left-click to scan and connect to nearby networks |
-| `polybar/powermenu.sh` | Zenity-based power menu |
-| `polybar/settings.sh` | Zenity-based settings menu |
+| `polybar/netbird.sh` | NetBird (WireGuard mesh VPN) status module — shows connection state, IP, and connected peers |
+| `polybar/netbird-menu.sh` | Rofi picker for the NetBird module — connect/disconnect, show peers, open UI |
+| `polybar/powermenu.sh` | Rofi power menu — lock, log out, suspend, hibernate, reboot, shut down |
+| `polybar/settings.sh` | Rofi settings menu — audio, display, network, Wi-Fi, config files |
 | `textforge/textforge.sh` | System-wide AI text rewriter — copies selected text, rewrites via local Ollama, pastes back in-place |
 | `textforge/textforge-menu.sh` | Rofi picker for TextForge — choose a rewrite mode (fix, professional, casual, rephrase, summarize, email, undo) |
 | `dunst/dunstrc` | Notification theme matching the bar's palette (dark background, blue/red accent frames) |

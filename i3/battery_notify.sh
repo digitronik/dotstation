@@ -16,7 +16,21 @@ echo $$ > "$PIDFILE"
 trap 'rm -f "$PIDFILE"' EXIT
 
 # --- Configuration ---
-BATTERY_PATH="/sys/class/power_supply/BAT0"
+# Auto-detect first battery device (BAT0, BAT1, etc.) instead of hardcoding.
+BATTERY_PATH=""
+for bat in /sys/class/power_supply/BAT*; do
+    if [ -e "$bat/status" ] && [ -e "$bat/capacity" ]; then
+        BATTERY_PATH="$bat"
+        break
+    fi
+done
+
+if [ -z "$BATTERY_PATH" ]; then
+    # No battery found — desktop or unsupported hardware. Exit silently.
+    rm -f "$PIDFILE"
+    exit 0
+fi
+
 STATUS_PATH="$BATTERY_PATH/status"
 CAPACITY_PATH="$BATTERY_PATH/capacity"
 STATE_FILE="/tmp/battery_notification.state"
