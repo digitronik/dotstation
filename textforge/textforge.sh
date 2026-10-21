@@ -54,12 +54,12 @@ notify() {
 # --- Mode definitions --------------------------------------------------------
 
 declare -A PROMPTS=(
-    [fix]="Fix the grammar, spelling, punctuation, and sentence flow of the following text. Preserve the original meaning, tone, formatting, and language. Do not add or remove sentences."
-    [professional]="Rewrite the following text in a professional, polished tone suitable for workplace emails and Slack messages. Preserve the core meaning and key details."
-    [casual]="Rewrite the following text in a casual, friendly, conversational tone. Preserve the original meaning."
-    [rephrase]="Rephrase the following text to improve clarity, readability, and flow. Preserve the original meaning. Do not add new information."
-    [summarize]="Summarize the following text concisely. Preserve the key points only."
-    [email]="Rewrite the following text as a well-structured professional email. Include a greeting and a sign-off. Keep it concise."
+    [fix]="Fix grammar, spelling, and punctuation only. Do not add or remove sentences."
+    [professional]="Rewrite in a professional tone for workplace emails and Slack."
+    [casual]="Rewrite in a casual, friendly, conversational tone."
+    [rephrase]="Rephrase for better clarity and flow without changing the meaning."
+    [summarize]="Summarize concisely, keeping the key points."
+    [email]="Rewrite as a professional email with a greeting and sign-off."
 )
 
 declare -A MODE_LABELS=(
@@ -71,7 +71,62 @@ declare -A MODE_LABELS=(
     [email]="Formatted as email"
 )
 
-SYSTEM_PROMPT="You are a text editor. You receive text and an editing instruction. Follow the instruction exactly. Output ONLY the resulting text. Never add explanations, comments, markdown formatting, code blocks, or quotation marks around your output. Never start with phrases like 'Here is' or 'Sure'. Just output the raw transformed text."
+SYSTEM_PROMPT="You are a text editor for an IT engineer. Follow the instruction and output ONLY the result — no preamble, no 'Here is'. Two rules that always apply: (1) Keep all technical terms, commands, code, URLs, and acronyms exactly as written — never simplify or replace them. (2) Preserve all structure — bullet points, numbered lists, markdown, and code blocks must appear in the output exactly as they appear in the input."
+
+# --- List-structure preservation ----------------------------------------------
+# Small models reliably drop bullet/number prefixes regardless of prompting.
+# Fix: strip prefixes before the API call, restore them after. The model never
+# sees "- " so it can never lose it. Works for -, *, •, +, and "1." numbering.
+# Skipped for summarize/email which intentionally restructure the content.
+
+# Output variables (avoids subshells — both functions write to globals so the
+# array and the text survive into the calling shell).
+declare -a _line_prefixes=()
+_stripped_text=""
+_restored_text=""
+
+strip_list_prefixes() {
+    # Populates _line_prefixes and _stripped_text from $1. Call directly, not in $().
+    _line_prefixes=()
+    _stripped_text=""
+    local line
+    while IFS= read -r line; do
+        if [[ "$line" =~ ^([[:space:]]*[-*•+·][[:space:]]+)(.*) ]]; then
+            _line_prefixes+=("${BASH_REMATCH[1]}")
+            _stripped_text+="${BASH_REMATCH[2]}"$'\n'
+        elif [[ "$line" =~ ^([[:space:]]*[0-9]+\.[[:space:]]+)(.*) ]]; then
+            _line_prefixes+=("${BASH_REMATCH[1]}")
+            _stripped_text+="${BASH_REMATCH[2]}"$'\n'
+        else
+            _line_prefixes+=("")
+            _stripped_text+="$line"$'\n'
+        fi
+    done <<< "$1"
+    _stripped_text="${_stripped_text%$'\n'}"
+}
+
+restore_list_prefixes() {
+    # Populates _restored_text from $1 + _line_prefixes. Call directly, not in $().
+    local corrected="$1"
+    local -a out=()
+    local line
+    while IFS= read -r line; do
+        out+=("$line")
+    done <<< "$corrected"
+
+    local n_in=${#_line_prefixes[@]} n_out=${#out[@]}
+    # Line count changed — model restructured content, return as-is
+    if (( n_in == 0 || n_in != n_out )); then
+        _restored_text="$corrected"
+        return
+    fi
+
+    _restored_text=""
+    for (( i=0; i<n_out; i++ )); do
+        _restored_text+="${_line_prefixes[$i]}${out[$i]}"$'\n'
+    done
+    _restored_text="${_restored_text%$'\n'}"
+}
 
 # --- X11 selection capture ----------------------------------------------------
 # i3 runs this script after the hotkey, so we must not trust the clipboard blindly:
@@ -192,10 +247,22 @@ notify low "TextForge" "✦ ${MODE^}…" 30000
 # --- Call Ollama API ----------------------------------------------------------
 # Build the request with jq so the user's text is properly JSON-escaped (handles
 # newlines, quotes, backslashes, Unicode — anything you'd find in real text).
+# For modes that preserve structure, strip list prefixes now and restore after.
+
+TEXT_TO_SEND="$TEXT"
+RESTORE_STRUCTURE=false
+if [[ "$MODE" != "summarize" && "$MODE" != "email" ]]; then
+    if echo "$TEXT" | grep -qE '^[[:space:]]*[-*•+·][[:space:]]|^[[:space:]]*[0-9]+\.[[:space:]]'; then
+        strip_list_prefixes "$TEXT"   # sets _stripped_text + _line_prefixes (no subshell)
+        TEXT_TO_SEND="$_stripped_text"
+        RESTORE_STRUCTURE=true
+    fi
+fi
 
 USER_PROMPT="${PROMPTS[$MODE]}
 
-${TEXT}"
+Text:
+${TEXT_TO_SEND}"
 
 REQUEST=$(jq -n \
     --arg model "$OLLAMA_MODEL" \
@@ -223,6 +290,12 @@ if [[ -z "$CORRECTED" ]]; then
     ERROR=$(echo "$RESPONSE" | jq -r '.error // "Unknown error"')
     notify critical "TextForge" "Ollama error: $ERROR"
     exit 1
+fi
+
+# Re-attach the list prefixes the model never saw
+if $RESTORE_STRUCTURE; then
+    restore_list_prefixes "$CORRECTED"   # sets _restored_text (no subshell)
+    CORRECTED="$_restored_text"
 fi
 
 # --- Paste corrected text back ------------------------------------------------
