@@ -48,6 +48,7 @@ BACKUP_TARGETS: dict[str, BackupTarget] = {
     "polybar":   BackupTarget(CONFIG_DIR / "polybar"),
     "dunst":     BackupTarget(CONFIG_DIR / "dunst"),
     "rofi":      BackupTarget(CONFIG_DIR / "rofi", requires_cmd="rofi"),
+    "textforge": BackupTarget(CONFIG_DIR / "textforge"),
     "hosts":     BackupTarget(Path("/etc/hosts")),
 }
 
@@ -162,6 +163,10 @@ def get_repo_dunst_dir() -> Path:
 
 def get_repo_rofi_dir() -> Path:
     return get_repo_root() / "rofi"
+
+
+def get_repo_textforge_dir() -> Path:
+    return get_repo_root() / "textforge"
 
 
 def get_repo_fonts_dir() -> Path:

@@ -271,6 +271,8 @@ fi
 # --- Networking ---------------------------------------------------------------
 section "Networking"
 dnf_install "NetworkManager-tui" "NetworkManager TUI (nmtui)"
+dnf_install "netbird"    "NetBird (WireGuard Mesh VPN)"
+dnf_install "netbird-ui" "NetBird UI (Tray App)"
 
 # --- Screenshots & Screencast -------------------------------------------------
 section "Screenshots & Screencast"
@@ -378,6 +380,7 @@ dnf_install "lightdm-gtk"           "LightDM GTK Greeter"
 dnf_install "dex-autostart"         "dex-autostart (XDG Autostart)"
 dnf_install "dunst"                 "Dunst (Notification Daemon)"
 dnf_install "xclip"                 "xclip (Clipboard)"
+dnf_install "xdotool"               "xdotool (X11 Automation)"
 
 # --- System Utilities ---------------------------------------------------------
 section "System Utilities"
@@ -391,6 +394,7 @@ dnf_install "unzip"       "unzip"
 dnf_install "lsof"        "lsof"
 dnf_install "net-tools"   "net-tools (ifconfig / netstat)"
 dnf_install "nmap-ncat"   "nmap-ncat (nc)"
+dnf_install "jq"          "jq (JSON parser)"
 
 # --- Python Development -------------------------------------------------------
 section "Python Development"

@@ -32,11 +32,12 @@ battery charge-threshold setup (script + udev rule + scoped sudoers entry).
 ### `deploy` — Deploy configs to `~/.config`
 
 ```bash
-dotstation deploy all          # deploy i3 + polybar + dunst + rofi configs + fonts
+dotstation deploy all          # deploy i3 + polybar + dunst + rofi + textforge configs + fonts
 dotstation deploy i3           # deploy ~/.config/i3 only
 dotstation deploy polybar      # deploy ~/.config/polybar only
 dotstation deploy dunst        # deploy ~/.config/dunst only (restarts the dunst service)
 dotstation deploy rofi         # deploy ~/.config/rofi only
+dotstation deploy textforge    # deploy ~/.config/textforge only
 dotstation deploy fonts        # install bundled fonts to ~/.local/share/fonts
 ```
 
@@ -45,11 +46,12 @@ Existing configs are automatically backed up as `.bak` before deploying.
 ### `sync` — Sync live changes back into the repo
 
 ```bash
-dotstation sync all            # sync ~/.config/{i3,polybar,dunst,rofi} → repo
+dotstation sync all            # sync ~/.config/{i3,polybar,dunst,rofi,textforge} → repo
 dotstation sync i3             # sync i3 only
 dotstation sync polybar        # sync polybar only
 dotstation sync dunst          # sync dunst only
 dotstation sync rofi           # sync rofi only
+dotstation sync textforge      # sync textforge only
 ```
 
 Shows a git diff summary after syncing. Then commit manually when happy.
@@ -174,6 +176,67 @@ dotstation backup all          # creates ~/dotstation-backups/dotstation-backup-
 
 ---
 
+## TextForge — System-Wide AI Text Rewriter
+
+A completely invisible, system-wide grammar and text correction tool that runs
+locally and works in **every application** — Slack, Gmail, your IDE, terminal,
+anything with a text field. No browser extensions, no cloud APIs, no GUI apps.
+
+**How it works:** highlight text → press `$mod+g` → text rewrites itself in-place.
+Under the hood, it copies the selection via `xdotool`/`xclip`, sends it to a local
+[Ollama](https://ollama.com) model, and pastes the corrected text back — all in
+about a second.
+
+### Modes
+
+| Hotkey | Mode | What it does |
+| :--- | :--- | :--- |
+| `$mod+g` | **Fix** | Fix grammar, spelling, and punctuation (the one-key default) |
+| `$mod+Shift+g` → menu | **Professional** | Rewrite in a polished workplace tone |
+| | **Casual** | Rewrite in a friendly conversational tone |
+| | **Rephrase** | Improve clarity and flow without changing meaning |
+| | **Summarize** | Condense to key points |
+| | **Email** | Format as a professional email with greeting/sign-off |
+| | **Undo** | Revert the last rewrite (restores the original text) |
+
+### Setup
+
+TextForge requires [Ollama](https://ollama.com) running locally with a fast model:
+
+```bash
+# Install Ollama (one-time)
+curl -fsSL https://ollama.com/install.sh | sh
+
+# Pull a fast model (1.5B — runs well even on CPU)
+ollama pull qwen2.5:1.5b
+
+# Start the server (or enable the systemd service)
+ollama serve
+```
+
+Then deploy the scripts and reload i3:
+
+```bash
+dotstation deploy textforge    # or: dotstation deploy all
+# Press Mod+Shift+c to reload i3
+```
+
+### Configuration
+
+Create `~/.config/textforge/config` to override defaults:
+
+```bash
+# Change model (default: qwen2.5:1.5b)
+TEXTFORGE_MODEL=llama3.2:3b
+
+# Change Ollama URL (default: http://localhost:11434)
+TEXTFORGE_OLLAMA_URL=http://localhost:11434
+```
+
+Dependencies (`xclip`, `xdotool`, `curl`, `jq`) are all installed by `bash install.sh`.
+
+---
+
 ## Battery Charge Management
 
 ThinkPads can cap charging at a threshold instead of always charging to 100% — since the
@@ -236,6 +299,8 @@ The modifier key is **Super** (Windows key), referred to as `$mod`.
 | `$mod+Shift+1-0` | Move window to workspace |
 | `PrintScreen` | Screenshot |
 | `$mod+PrintScreen` | Start/stop GIF screen recording |
+| `$mod+g` | **TextForge** — fix grammar on selected text (instant, one-key) |
+| `$mod+Shift+g` | **TextForge** — open AI rewrite menu (fix, professional, casual, rephrase, summarize, email) |
 | `$mod+m` | Display manager (arandr) |
 | `$mod+Shift+v` | Audio controls (pavucontrol) |
 
@@ -261,5 +326,7 @@ The modifier key is **Super** (Windows key), referred to as `$mod`.
 | `polybar/wifi-menu.sh` | Rofi picker for the Wi-Fi module — left-click to scan and connect to nearby networks |
 | `polybar/powermenu.sh` | Zenity-based power menu |
 | `polybar/settings.sh` | Zenity-based settings menu |
+| `textforge/textforge.sh` | System-wide AI text rewriter — copies selected text, rewrites via local Ollama, pastes back in-place |
+| `textforge/textforge-menu.sh` | Rofi picker for TextForge — choose a rewrite mode (fix, professional, casual, rephrase, summarize, email, undo) |
 | `dunst/dunstrc` | Notification theme matching the bar's palette (dark background, blue/red accent frames) |
-| `rofi/config.rasi` | Rofi theme matching the bar's palette — used by the Wi-Fi and VPN pickers |
+| `rofi/config.rasi` | Rofi theme matching the bar's palette — used by the Wi-Fi, VPN, and TextForge pickers |

@@ -9,6 +9,7 @@ from dotstation.constants import (
     get_repo_polybar_dir,
     get_repo_dunst_dir,
     get_repo_rofi_dir,
+    get_repo_textforge_dir,
     get_repo_root,
     CONFIG_DIR,
 )
@@ -67,6 +68,14 @@ def sync_rofi():
     console.print("\n  [dim]Run [bold]git add -A && git commit[/bold] to save the changes.[/dim]")
 
 
+@sync.command("textforge")
+def sync_textforge():
+    """Sync ~/.config/textforge → repo textforge/."""
+    console.print("\n[bold]Syncing TextForge config...[/bold]")
+    _sync_dir(CONFIG_DIR / "textforge", get_repo_textforge_dir(), "textforge")
+    console.print("\n  [dim]Run [bold]git add -A && git commit[/bold] to save the changes.[/dim]")
+
+
 @sync.command("all")
 def sync_all():
     """Sync all live configs back into the repository."""
@@ -74,8 +83,9 @@ def sync_all():
 
     _sync_dir(CONFIG_DIR / "i3",      get_repo_i3_dir(),      "i3")
     _sync_dir(CONFIG_DIR / "polybar", get_repo_polybar_dir(), "polybar")
-    _sync_dir(CONFIG_DIR / "dunst",   get_repo_dunst_dir(),   "dunst")
-    _sync_dir(CONFIG_DIR / "rofi",    get_repo_rofi_dir(),    "rofi")
+    _sync_dir(CONFIG_DIR / "dunst",      get_repo_dunst_dir(),      "dunst")
+    _sync_dir(CONFIG_DIR / "rofi",       get_repo_rofi_dir(),       "rofi")
+    _sync_dir(CONFIG_DIR / "textforge",  get_repo_textforge_dir(),  "textforge")
 
     # Show git diff summary
     console.print("\n[bold]Git diff summary:[/bold]")

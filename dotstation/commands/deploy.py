@@ -10,6 +10,7 @@ from dotstation.constants import (
     get_repo_polybar_dir,
     get_repo_dunst_dir,
     get_repo_rofi_dir,
+    get_repo_textforge_dir,
     get_repo_fonts_dir,
     CONFIG_DIR,
 )
@@ -93,6 +94,20 @@ def deploy_rofi(backup):
     console.print(f"  [green][OK][/green]    Rofi config deployed to {dst}")
 
 
+@deploy.command("textforge")
+@click.option("--backup/--no-backup", default=True, help="Backup existing config before deploying.")
+def deploy_textforge(backup):
+    """Deploy TextForge scripts to ~/.config/textforge."""
+    console.print("\n[bold]Deploying TextForge...[/bold]")
+    dst = CONFIG_DIR / "textforge"
+    if backup:
+        _backup_existing(dst)
+    _copy_and_chmod(get_repo_textforge_dir(), dst)
+    for sh in dst.glob("*.sh"):
+        sh.chmod(sh.stat().st_mode | 0o111)
+    console.print(f"  [green][OK][/green]    TextForge deployed to {dst}")
+
+
 @deploy.command("fonts")
 def deploy_fonts():
     """Install bundled fonts to ~/.local/share/fonts."""
@@ -119,6 +134,7 @@ def deploy_all(ctx, backup):
     ctx.invoke(deploy_polybar, backup=backup)
     ctx.invoke(deploy_dunst, backup=backup)
     ctx.invoke(deploy_rofi, backup=backup)
+    ctx.invoke(deploy_textforge, backup=backup)
     ctx.invoke(deploy_fonts)
     console.print("\n  [bold green]All configs deployed.[/bold green]")
     console.print("  Reload i3 with [bold]Mod+Shift+c[/bold]")
